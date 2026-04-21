@@ -1,4 +1,4 @@
-# speechmatics-live-transcription-client
+# Speechmatics-live-transcription-client
 
 ![CI](https://github.com/Atri2-code/speechmatics-live-transcription-client/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB)
