@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speechmatics Live Transcription</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8eaf0;
+      --muted: #8b8fa8;
+      --accent: #4f8ef7;
+      --green: #4caf7d;
+      --amber: #f5a623;
+      --red: #e05454;
+      --font: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.25rem 2rem;
+      border-bottom: 0.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+
+    .logo span { color: var(--accent); }
+
+    .status {
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 0.5px solid var(--border);
+    }
+
+    .status-idle   { color: var(--muted); }
+    .status-active { color: var(--green); border-color: var(--green); }
+    .status-error  { color: var(--red);   border-color: var(--red); }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 0;
+      max-height: calc(100vh - 65px);
+    }
+
+    .transcript-panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 0.5px solid var(--border);
+    }
+
+    .controls {
+      padding: 1rem 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: var(--surface);
+      color: var(--text);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    button {
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border);
+      transition: opacity 0.15s;
+    }
+
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    #btn-start { background: var(--accent); color: #fff; border-color: var(--accent); }
+    #btn-stop  { background: transparent; color: var(--red); border-color: var(--red); }
+    #btn-export{ background: transparent; color: var(--muted); }
+
+    #transcript {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 2;
+      letter-spacing: 0.2px;
+    }
+
+    .word { display: inline; transition: color 0.1s; }
+    .conf-high { color: #e8eaf0; }
+    .conf-mid  { color: var(--amber); }
+    .conf-low  { color: var(--red); }
+
+    .sidebar {
+      padding: 1.25rem 1rem;
+      overflow-y: auto;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .stat-val {
+      font-family: var(--font);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+    }
+
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 0.5px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    #speakers {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .speaker-tag {
+      font-family: var(--font);
+      font-size: 12px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      color: var(--text);
+    }
+
+    .legend { display: flex; flex-direction: column; gap: 6px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    @media (max-width: 640px) {
+      main { grid-template-columns: 1fr; }
+      .sidebar { border-top: 0.5px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><span>speechmatics</span> · live transcription</div>
+    <span id="status" class="status status-idle">Idle</span>
+  </header>
+
+  <main>
+    <div class="transcript-panel">
+      <div class="controls">
+        <select id="language-select">
+          <option value="en">English</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="es">Spanish</option>
+          <option value="zh">Mandarin</option>
+          <option value="ja">Japanese</option>
+        </select>
+        <button id="btn-start">Start</button>
+        <button id="btn-stop" disabled>Stop</button>
+        <button id="btn-export">Export</button>
+      </div>
+      <div id="transcript" aria-live="polite" aria-label="Live transcript"></div>
+    </div>
+
+    <aside class="sidebar">
+      <p class="sidebar-label">Session stats</p>
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-val" id="word-count">0</span>
+          <span class="stat-lbl">Words</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val" id="wpm">0</span>
+          <span class="stat-lbl">WPM</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val" id="avg-confidence">—</span>
+          <span class="stat-lbl">Confidence</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val" id="duration">00:00</span>
+          <span class="stat-lbl">Duration</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <p class="sidebar-label">Speakers</p>
+      <div id="speakers"></div>
+
+      <hr class="divider">
+
+      <p class="sidebar-label">Confidence legend</p>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#e8eaf0;"></div>
+          High ≥ 90%
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#f5a623;"></div>
+          Medium ≥ 70%
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#e05454;"></div>
+          Low &lt; 70%
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="../src/js/dashboard.js"></script>
+</body>
+</html>
